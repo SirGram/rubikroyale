@@ -23,7 +23,7 @@ export default function Cube({ faces, ...props }: Props) {
   const cubeSize= 1.95;
 
   const materials = useMemo(() => ({
-    base: new THREE.MeshStandardMaterial({ color: "black" }), // neutral faces
+    base: new THREE.MeshStandardMaterial({ color: "lightgray" }), // neutral faces
     front: new THREE.MeshStandardMaterial({ color: 0xff0000 }), // Red
     back: new THREE.MeshStandardMaterial({ color: 0x00ff00 }), // Green
     up: new THREE.MeshStandardMaterial({ color: 0xffffff }), // White
