@@ -8,6 +8,7 @@ import Move from "./entity/move"
 import { getBoxes, rotateAroundWorldAxis } from "./helper"
 import rotatePieces from './state/rotate'
 import * as THREE from "three"
+import { checkIsSolved, findSolution } from "./helper/solve"
 
 export type RubikProps = {
   size?: number
@@ -17,6 +18,7 @@ export type RubikRef = {
   rotate: (rotation: keyof RubikRotation, inversed?: boolean, stepAngle?: number) => Promise<void>,
   showLabel: (value: boolean) => void,
   scramble: (movesCount: number) => Promise<void>
+  solve: () => Promise<void>
 }
 
 const defaultStepAngle: number = 6
@@ -26,6 +28,7 @@ const Rubik = forwardRef<RubikRef, RubikProps>(({ size = 3, ...props }, ref) => 
   const moveRef = useRef<Move>()
   const shiftKeyPressed = useRef<boolean>(false)
   const [showLabel, setShowLabel] = useState(false)
+  const [isSolved,  setIsSolved] = useState(true)
 
   const rotateBoxes = (face: keyof RubikRotation, targetAngle: number) => {
     const boxes = getBoxes(rubik.current.children, face)
@@ -47,6 +50,7 @@ const Rubik = forwardRef<RubikRef, RubikProps>(({ size = 3, ...props }, ref) => 
       moveRef.current.onComplete(() => {
         rotatePieces(face, inversed)
         moveRef.current = undefined
+        updateSolvedState()
         resolve()
       })
 
@@ -54,21 +58,47 @@ const Rubik = forwardRef<RubikRef, RubikProps>(({ size = 3, ...props }, ref) => 
         const targetSign = Math.sign(move.targetAngle)
         rotateBoxes(face, stepAngle * targetSign)
       })
-
+      
     })
   }, [])
 
+
+  
+  const faces: (keyof RubikRotation)[] = ['U', 'D', 'L', 'R', 'F', 'B']
+  
   const scramble = useCallback(async (movesCount: number) => {
-    const faces: (keyof RubikRotation)[] = ['U', 'D', 'L', 'R', 'F', 'B']
     for (let i = 0; i < movesCount; i++) {
       const randomFace = faces[Math.floor(Math.random() * faces.length)];
       const inversed = Math.random() > 0.5;
       await rotate(randomFace, inversed)
     }
-
+    
+  }, [rotate])
+  
+  const solve = useCallback(async () => {
+    console.log('solve')
+    if (moveRef.current) return
+  
+    const solution = findSolution(rubik.current)
+    console.log(solution)
+    
+    for (const move of solution) {
+      await rotate(move.face, move.inversed)
+    }
   }, [rotate])
 
-  useImperativeHandle(ref, () => ({ rotate, showLabel: (value: boolean) => setShowLabel(value), scramble}))
+  const updateSolvedState = useCallback(() => {
+    const newIsSolved = checkIsSolved(rubik.current.children, size)
+    setIsSolved(prevIsSolved => {
+        if (newIsSolved !== prevIsSolved) {
+            return newIsSolved
+        }
+        return prevIsSolved
+    })
+    console.log('New solved state:', newIsSolved)
+}, [])
+
+  useImperativeHandle(ref, () => ({ rotate, showLabel: (value: boolean) => setShowLabel(value), scramble, solve}))
 
   useEffect(() => {
     const listenToKeyboard = (e: KeyboardEvent) => {

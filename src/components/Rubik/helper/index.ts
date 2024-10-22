@@ -36,3 +36,6 @@ export function getBoxes(objects: Object3D[], face: keyof RubikRotation, except 
 
   return objects.filter(cube => rotationPieces.includes(cube.name))
 }
+
+
+
