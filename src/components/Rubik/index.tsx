@@ -15,7 +15,8 @@ export type RubikProps = {
 
 export type RubikRef = {
   rotate: (rotation: keyof RubikRotation, inversed?: boolean, stepAngle?: number) => Promise<void>,
-  showLabel: (value: boolean) => void
+  showLabel: (value: boolean) => void,
+  scramble: (movesCount: number) => Promise<void>
 }
 
 const defaultStepAngle: number = 6
@@ -57,7 +58,17 @@ const Rubik = forwardRef<RubikRef, RubikProps>(({ size = 3, ...props }, ref) => 
     })
   }, [])
 
-  useImperativeHandle(ref, () => ({ rotate, showLabel: (value: boolean) => setShowLabel(value) }))
+  const scramble = useCallback(async (movesCount: number) => {
+    const faces: (keyof RubikRotation)[] = ['U', 'D', 'L', 'R', 'F', 'B']
+    for (let i = 0; i < movesCount; i++) {
+      const randomFace = faces[Math.floor(Math.random() * faces.length)];
+      const inversed = Math.random() > 0.5;
+      await rotate(randomFace, inversed)
+    }
+
+  }, [rotate])
+
+  useImperativeHandle(ref, () => ({ rotate, showLabel: (value: boolean) => setShowLabel(value), scramble}))
 
   useEffect(() => {
     const listenToKeyboard = (e: KeyboardEvent) => {
